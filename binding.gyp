@@ -3,6 +3,9 @@
     {
       "target_name": "dmx_native",
       "sources": [ "dmx.cc" ],
+      'include_dirs': [
+        '<!(node -e "require(\'nan\')")'
+      ],
       "libraries": [ "-lftdi" ]
     },
     {
