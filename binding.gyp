@@ -6,7 +6,7 @@
       'include_dirs': [
         '<!(node -e "require(\'nan\')")'
       ],
-      "libraries": [ "-lftdi1" ]
+      "libraries": [ "-lftdi" ]
     },
     {
       "target_name": "action_after_build",
