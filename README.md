@@ -6,13 +6,13 @@ Control any DMX512 compatible lighting system with node.js via FTDI USB-RS485 ca
 Requirements
 ------
 * node.js
-* [Сompatible USB-RS485 cable](http://www.ftdichip.com/Products/Cables/USBRS485.htm)
+* [Сompatible USB-RS485 cable](https://s.click.aliexpress.com/e/_AK6bxX)
 * libftdi1 and libftdi-dev packages or [libFTDI library](http://www.intra2net.com/en/developer/libftdi/index.php)
 
 Install
 ------
 ```bash
-npm install git://github.com/unkernet/node-dmx.git
+npm install git://github.com/groupsky/node-dmx.git
 ```
 Use
 ------
