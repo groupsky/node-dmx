@@ -2,14 +2,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <v8.h>
-#include <node.h>
 #include <ftdi.h>
 #include <sys/time.h>
 #include <time.h>
 #include "dmx.h"
-
-using namespace v8;
 
 int min(int a,int b) {
   return ( a < b ? a : b);
@@ -25,9 +21,7 @@ void CalculateSleep (timespec *sleep, unsigned int Hz) {
   sleep->tv_nsec = ns;
 }
 
-Handle<Value> list(const Arguments& args) {
-  HandleScope scope;
-
+NAN_METHOD(list) {
   unsigned int i;
   int ret;
   struct ftdi_context ftdic;
@@ -37,59 +31,72 @@ Handle<Value> list(const Arguments& args) {
   char err[errln];
 
   if (ftdi_init(&ftdic) < 0) {
-    return scope.Close(ThrowException(Exception::Error(String::New("ftdi_init failed"))));
+    Nan::ThrowError(Nan::Error("ftdi_init failed"));
+    return;
   }
   if ((ret = ftdi_usb_find_all(&ftdic, &devlist, 0x0403, 0x6001)) < 0) {
     snprintf(err, errln, "ftdi_usb_find_all failed: %d (%s)", ret, ftdi_get_error_string(&ftdic));
-    return scope.Close(ThrowException(Exception::Error(String::New(err))));
+    Nan::ThrowError(Nan::Error(err));
+    return;
   }
-  Local<Array> result = Array::New(ret);
-  Local<Object> obj;
+  v8::Local<v8::Array> result = Nan::New<v8::Array>(ret);
+  v8::Local<v8::Object> obj;
+  v8::Local<v8::Context> context = info.GetIsolate()->GetCurrentContext();
 
   i = 0;
   for (curdev = devlist; curdev != NULL; i++) {
       if ((ret = ftdi_usb_get_strings(&ftdic, curdev->dev, manufacturer, 128, description, 128, serial, 128)) < 0) {
         snprintf(err, errln, "ftdi_usb_get_strings failed: %d (%s)", ret, ftdi_get_error_string(&ftdic));
-        scope.Close(ThrowException(Exception::Error(String::New(err))));
+        Nan::ThrowError(Nan::Error(err));
+        return;
       }
-      obj = Object::New();
-      obj->Set(String::NewSymbol("manufacturer"), String::New(manufacturer));
-      obj->Set(String::NewSymbol("description"), String::New(description));
-      obj->Set(String::NewSymbol("serial"), String::New(serial));
-      result->Set(i, obj);
+      obj = Nan::New<v8::Object>();
+      obj->Set(context, Nan::New("manufacturer").ToLocalChecked(), Nan::New(manufacturer).ToLocalChecked());
+      obj->Set(context, Nan::New("description").ToLocalChecked(), Nan::New(description).ToLocalChecked());
+      obj->Set(context, Nan::New("serial").ToLocalChecked(), Nan::New(serial).ToLocalChecked());
+      Nan::Set(result, i, obj);
       curdev = curdev->next;
   }
 
   ftdi_list_free(&devlist);
   ftdi_deinit(&ftdic);
 
-  return scope.Close(result);
-}
-
-Handle<Value> newDMX(const Arguments& args) {
-  HandleScope scope;
-  return scope.Close(DMX::NewInstance(args));
+  info.GetReturnValue().Set(result);
 }
 
 DMX::DMX() {};
 DMX::~DMX() {};
-Persistent<Function> DMX::constructor;
+Nan::Persistent<v8::Function> DMX::constructor;
 
-void DMX::Init() {
-  Local<FunctionTemplate> tpl = FunctionTemplate::New(New);
-  tpl->SetClassName(String::NewSymbol("DMX"));
+NAN_MODULE_INIT(DMX::Init) {
+  v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
+  tpl->SetClassName(Nan::New("DMX").ToLocalChecked());
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "start", Start);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "stop", Stop);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "set", Set);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "step", Step);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "setHz", SetHz);
-  constructor = Persistent<Function>::New(tpl->GetFunction());
+
+  Nan::SetPrototypeMethod(tpl, "start", Start);
+  Nan::SetPrototypeMethod(tpl, "stop", Stop);
+  Nan::SetPrototypeMethod(tpl, "set", Set);
+  Nan::SetPrototypeMethod(tpl, "step", Step);
+  Nan::SetPrototypeMethod(tpl, "setHz", SetHz);
+
+  constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
+  Nan::Set(target, Nan::New("DMX").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
 }
 
-Handle<Value> DMX::New(const Arguments& args) {
-  HandleScope scope;
-  
+NAN_METHOD(DMX::New) {
+  if (!info.IsConstructCall()) {
+    const int argc = 1;
+    v8::Local<v8::Value> argv[argc] = {info[0]};
+    v8::Local<v8::Function> cons = Nan::New(constructor);
+    info.GetReturnValue().Set(Nan::NewInstance(cons, argc, argv).ToLocalChecked());
+    return;
+  }
+
+  if (!info[0]->IsUndefined() && !info[0]->IsInt32()) {
+    Nan::ThrowTypeError("devId must be an int");
+    return;
+  }
+
   // Initalize new object
   DMX* obj = new DMX();
   pthread_mutex_init(&(obj->lock), NULL);
@@ -98,22 +105,25 @@ Handle<Value> DMX::New(const Arguments& args) {
   CalculateSleep(&(obj->sleep),25);
   memset(obj->dmxVal,0,512);
   memset(obj->newVal,0,512);
-  
+
   struct ftdi_context ftdic;
   struct ftdi_device_list *devlist, *curdev;
   const size_t errln = 128;
   char err[errln];
   int ret;
-  unsigned int i = 0, devid = args[0]->Int32Value();
+  unsigned int i = 0, devid = info[0]->IsUndefined() ? 0 : Nan::To<int>(info[0]).FromJust();
 
   // Find device
-  if (ftdi_init(&ftdic) < 0)
-    return scope.Close(ThrowException(Exception::Error(String::New("ftdi_init failed"))));
+  if (ftdi_init(&ftdic) < 0) {
+    Nan::ThrowTypeError("ftdi_init failed");
+    return;
+  }
   if ((ret = ftdi_usb_find_all(&ftdic, &devlist, 0x0403, 0x6001)) < 0) {
     snprintf(err, errln, "ftdi_usb_find_all failed: %d (%s)", ret, ftdi_get_error_string(&ftdic));
     ftdi_list_free(&devlist);
     ftdi_deinit(&ftdic);
-    return scope.Close(ThrowException(Exception::Error(String::New(err))));
+    Nan::ThrowTypeError(err);
+    return;
   }
   for (curdev = devlist; curdev != NULL; i++) {
     if (i == devid) break;
@@ -123,7 +133,8 @@ Handle<Value> DMX::New(const Arguments& args) {
     snprintf(err, errln, "Cannot find device #%d", devid);
     ftdi_list_free(&devlist);
     ftdi_deinit(&ftdic);
-    return scope.Close(ThrowException(Exception::Error(String::New(err))));
+    Nan::ThrowTypeError(err);
+    return;
   }
 
   // Open device
@@ -131,30 +142,25 @@ Handle<Value> DMX::New(const Arguments& args) {
     snprintf(err, errln, "ftdi_usb_open_dev failed: %d (%s)", ret, ftdi_get_error_string(&ftdic));
     ftdi_list_free(&devlist);
     ftdi_deinit(&ftdic);
-    return scope.Close(ThrowException(Exception::Error(String::New(err))));
+    Nan::ThrowTypeError(err);
+    return;
   }
   ftdi_list_free(&devlist);
 
   // Setup device
-  if (((ret = ftdi_set_baudrate(&ftdic, 250000)) < 0) || 
+  if (((ret = ftdi_set_baudrate(&ftdic, 250000)) < 0) ||
       ((ret = ftdi_set_line_property2(&ftdic, BITS_8, STOP_BIT_2, NONE, BREAK_ON)) < 0) ||
       ((ret = ftdi_usb_purge_buffers(&ftdic)) < 0)) {
     snprintf(err, errln, "Can't setup device: %d (%s)", ret, ftdi_get_error_string(&ftdic));
     ftdi_deinit(&ftdic);
-    return scope.Close(ThrowException(Exception::Error(String::New(err))));
+    Nan::ThrowTypeError(err);
+    return;
   }
 
   obj->ftdic = ftdic;
   obj->portOpen = true;
-  obj->Wrap(args.This());
-  return args.This();
-}
-
-Handle<Value> DMX::NewInstance(const Arguments& args) {
-  HandleScope scope;
-  Handle<Value> argv[1] = { args[0] };
-  Local<Object> instance = constructor->NewInstance(1, argv);
-  return scope.Close(instance);
+  obj->Wrap(info.This());
+  info.GetReturnValue().Set(info.This());
 }
 
 void *DMX::thread_func(void* arg) {
@@ -183,95 +189,98 @@ void *DMX::thread_func(void* arg) {
     ftdi_write_data(&obj->ftdic, obj->dmxVal, 512);
     if (obj->sleep.tv_nsec > 0) nanosleep(&(obj->sleep), NULL);
   }
-  
+
   return NULL;
 }
 
-Handle<Value> DMX::Start(const Arguments& args) {
-  HandleScope scope;
-  DMX *obj = ObjectWrap::Unwrap<DMX>(args.This());
-  
+NAN_METHOD(DMX::Start) {
+  DMX *obj = Nan::ObjectWrap::Unwrap<DMX>(info.This());
+
   // Start working thread
   if (!obj->portOpen ||
       obj->threadRun ||
       (pthread_create(&(obj->thread), NULL, obj->thread_func, obj) != 0)
-     )
-    return scope.Close(Boolean::New(false));
-    
-  return scope.Close(Boolean::New(true));
+     ) {
+    info.GetReturnValue().Set(false);
+    return;
+  }
+
+  info.GetReturnValue().Set(true);
 }
 
-Handle<Value> DMX::Stop(const Arguments& args) {
-  HandleScope scope;
-  DMX *obj = ObjectWrap::Unwrap<DMX>(args.This());
-  
-  if (!obj->threadRun || !obj->portOpen)
-    return scope.Close(Boolean::New(false));
-  
+NAN_METHOD(DMX::Stop) {
+  DMX *obj = Nan::ObjectWrap::Unwrap<DMX>(info.This());
+
+  if (!obj->threadRun || !obj->portOpen) {
+    info.GetReturnValue().Set(false);
+    return;
+  }
+
   obj->threadRun = false;
 
   // Wait while thread ends if we want
-  if (args[0]->BooleanValue()) {
+  if (Nan::To<bool>(info[0]).FromJust()) {
     pthread_join(obj->thread, NULL);
   }
 
-  return scope.Close(Boolean::New(true));
+  info.GetReturnValue().Set(true);
 }
 
-Handle<Value> DMX::Step(const Arguments& args) {
-  HandleScope scope;
-  DMX *obj = ObjectWrap::Unwrap<DMX>(args.This());
-  
-  int s = args[0]->Int32Value();
+NAN_METHOD(DMX::Step) {
+  DMX *obj = Nan::ObjectWrap::Unwrap<DMX>(info.This());
+
+  int s = Nan::To<int>(info[0]).FromJust();
   if (s < 1 || s > 255) s=255;
-  
+
   obj->step = s;
-  return scope.Close(Boolean::New(true));
+
+  info.GetReturnValue().Set(true);
 }
 
-Handle<Value> DMX::SetHz(const Arguments& args) {
-  HandleScope scope;
-  DMX *obj = ObjectWrap::Unwrap<DMX>(args.This());
+NAN_METHOD(DMX::SetHz) {
+  DMX *obj = Nan::ObjectWrap::Unwrap<DMX>(info.This());
 
-  int Hz=args[0]->Int32Value();
-  if (Hz < 1 || Hz > 50) return scope.Close(Boolean::New(false));
+  int Hz=Nan::To<int>(info[0]).FromJust();
+  if (Hz < 1 || Hz > 50) {
+    info.GetReturnValue().Set(false);
+    return;
+  }
   CalculateSleep(&(obj->sleep),Hz);
 
-  return scope.Close(Boolean::New(true));
+  info.GetReturnValue().Set(true);
 }
 
-Handle<Value> DMX::Set(const Arguments& args) {
-  HandleScope scope;
-  DMX *obj = ObjectWrap::Unwrap<DMX>(args.This());
+NAN_METHOD(DMX::Set) {
+  DMX *obj = Nan::ObjectWrap::Unwrap<DMX>(info.This());
   int i, l, val;
   bool setAll;
-  Local<Array> arr;
-  
+  v8::Local<v8::Array> arr;
+
   // Start the working thread if it is not
-  if (!obj->threadRun) Start(args);
-  
+  if (!obj->threadRun) Start(info);
+
   // Set all channels to the same level if argument in not an Array
-  if (args[0]->IsArray()) {
+  if (info[0]->IsArray()) {
     setAll=false;
-    arr = Local<Array>::Cast(args[0]);
-    l = arr->Length(); 
+    arr = v8::Local<v8::Array>::Cast(info[0]);
+    l = arr->Length();
     if (l > 512) l = 512;
   } else {
     setAll = true;
-    val=args[0]->Int32Value();
+    val=Nan::To<int>(info[0]).FromJust();
     l = 512;
     if (val < 0) val = 0;
     if (val > 255) val = 255;
   }
-  
+
   pthread_mutex_lock(&(obj->lock));
   for (i = 0; i < l; i++) {
     if (!setAll) {
-      val = arr->Get(i)->Int32Value();
+      val = Nan::To<int>(arr->Get(i)).FromJust();
       if (val < 0) val = 0;
       if (val > 255) val = 255;
     }
-    
+
     // Check for the changes
     if (obj->newVal[i] != val) {
       obj->newVal[i] = val;
@@ -279,19 +288,18 @@ Handle<Value> DMX::Set(const Arguments& args) {
     }
   }
   pthread_mutex_unlock(&(obj->lock));
-  
+
   // sum is a number of non-zero channels
   int sum = 0;
   for (i = 0; i < 512; i++)
     sum += obj->newVal[i] > 0 ? 1 : 0;
-    
-  return scope.Close(Integer::New(sum));
+
+  info.GetReturnValue().Set(sum);
 }
 
-void Init (Handle<Object> target) {
-  DMX::Init();
-  NODE_SET_METHOD(target, "list", list);
-  NODE_SET_METHOD(target, "DMX", newDMX);
+NAN_MODULE_INIT(init) {
+  DMX::Init(target);
+  Nan::SetMethod(target, "list", list);
 }
 
-NODE_MODULE(dmx_native, Init)
+NODE_MODULE(dmx_native, init);
