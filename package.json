@@ -10,12 +10,12 @@
   "main": "./dmx_native.node",
   "repository": {
     "type": "git",
-    "url": "git://github.com/unkernet/node-dmx.git"
+    "url": "https://github.com/groupsky/node-dmx.git"
   },
   "engines": {
     "node": ">= 0.6.0"
   },
   "dependencies": {
-    "nan": "^2.15.0"
+    "nan": "^2.17.0"
   }
 }
