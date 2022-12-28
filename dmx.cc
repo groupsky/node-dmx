@@ -276,7 +276,7 @@ NAN_METHOD(DMX::Set) {
   pthread_mutex_lock(&(obj->lock));
   for (i = 0; i < l; i++) {
     if (!setAll) {
-      val = Nan::To<int>(arr->Get(i)).FromJust();
+      val = Nan::To<int>((Nan::Get(arr, i)).ToLocalChecked()).FromJust();
       if (val < 0) val = 0;
       if (val > 255) val = 255;
     }
