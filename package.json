@@ -13,7 +13,7 @@
     "url": "https://github.com/groupsky/node-dmx.git"
   },
   "engines": {
-    "node": ">= 0.6.0"
+    "node": ">= 16.0.0"
   },
   "dependencies": {
     "nan": "^2.24.0"
