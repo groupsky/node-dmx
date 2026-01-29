@@ -1,0 +1,55 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+CHANGELOG.md
+docs/
+
+# IDE and Editor
+.idea/
+.vscode/
+.editorconfig
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Claude Code
+.claude/
+AGENTS.md
+CLAUDE.md
+
+# CI/CD
+.github/
+
+# Node.js
+node_modules/
+npm-debug.log
+npm-error.log
+yarn-error.log
+
+# Build artifacts (will be rebuilt in container)
+build/
+*.node
+
+# Testing
+test.js
+coverage/
+.nyc_output/
+
+# Environment
+.env
+.env.*
+
+# Release configuration (not needed in container)
+.release-please-manifest.json
+release-please-config.json
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.log
