@@ -1,3 +1,5 @@
+[![pkg.pr.new](https://pkg.pr.new/badge/groupsky/node-dmx)](https://pkg.pr.new/~/groupsky/node-dmx)
+
 Description
 ------
 
