@@ -23,19 +23,10 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Cache apt packages
-        uses: actions/cache@v4
+        uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          path: |
-            /var/cache/apt/archives
-            /var/lib/apt/lists
-          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/pkg-pr-new.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-apt-
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libftdi-dev libftdi1
+          packages: libftdi-dev libftdi1
+          version: 1.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
