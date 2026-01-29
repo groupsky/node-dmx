@@ -31,11 +31,6 @@ npm install https://pkg.pr.new/groupsky/node-dmx/dmx@main
 npm install https://pkg.pr.new/groupsky/node-dmx/dmx@<PR-NUMBER>
 ```
 
-**Install from a specific commit:**
-```bash
-npm install https://pkg.pr.new/groupsky/node-dmx/dmx@<COMMIT-SHA>
-```
-
 Preview releases allow you to test changes before they're officially published to npm.
 
 Use
