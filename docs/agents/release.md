@@ -4,7 +4,7 @@ paths: /.github/workflows/release.yml, /.github/workflows/pkg-pr-new.yml, /relea
 
 # Release Process Guidelines
 
-Publishing to npm using release-please with conventional commits. Uses npm trusted publishers with OIDC for secure, tokenless publishing with provenance.
+Automated release management using release-please with conventional commits. Creates GitHub releases with generated changelogs.
 
 ## Release Triggers
 
@@ -50,12 +50,12 @@ SEE docs/agents/git.md for commit message format.
 
 ## Requirements
 
-- Conventional commit messages
-- Appropriate permissions in workflow (contents: write, pull-requests: write)
+- Conventional commit messages for version bump detection
+- Workflow permissions: contents: write, pull-requests: write
 
 ## References
 
-- `.github/workflows/release.yml` - Manual release workflow
+- `.github/workflows/release.yml` - Automatic release workflow
 - `.github/workflows/pkg-pr-new.yml` - Preview packages workflow
 - `release-please-config.json` - Release-please configuration
 - `docs/agents/git.md` - Commit message format and conventional commits
