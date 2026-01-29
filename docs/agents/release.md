@@ -1,5 +1,5 @@
 ---
-paths: /.github/workflows/release.yml, /.github/workflows/pkg-pr-new.yml, /release-please-config.json
+paths: /.github/workflows/release.yml, /.github/workflows/pkg-pr-new.yml
 ---
 
 # Release Process Guidelines
@@ -45,8 +45,9 @@ SEE docs/agents/git.md for commit message format.
 
 ## Configuration
 
-**release-please-config.json**: Main configuration for release-please behavior
-**.release-please-manifest.json**: Tracks current version (updated automatically)
+Configuration is defined inline in the workflow file (`.github/workflows/release.yml`).
+
+**.release-please-manifest.json**: Tracks current version (updated automatically by release-please)
 
 ## Requirements
 
@@ -55,9 +56,9 @@ SEE docs/agents/git.md for commit message format.
 
 ## References
 
-- `.github/workflows/release.yml` - Automatic release workflow
+- `.github/workflows/release.yml` - Automatic release workflow (includes inline configuration)
 - `.github/workflows/pkg-pr-new.yml` - Preview packages workflow
-- `release-please-config.json` - Release-please configuration
+- `.release-please-manifest.json` - Version tracking manifest
 - `docs/agents/git.md` - Commit message format and conventional commits
 - https://github.com/googleapis/release-please - Official release-please documentation
 - https://github.com/googleapis/release-please-action - GitHub Action documentation
