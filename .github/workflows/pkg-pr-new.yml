@@ -1,0 +1,45 @@
+name: pkg-pr-new
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  publish:
+    name: Publish to pkg.pr.new
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libftdi-dev libftdi1
+
+      - name: Install dependencies and build
+        run: npm install
+
+      - name: Verify build output
+        run: |
+          test -f dmx_native.node
+          echo "Build successful"
+
+      - name: Publish to pkg.pr.new (main branch)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: npx pkg-pr-new publish --compact
+
+      - name: Publish to pkg.pr.new (pull request)
+        if: github.event_name == 'pull_request'
+        run: npx pkg-pr-new publish --compact

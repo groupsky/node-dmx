@@ -14,6 +14,27 @@ Install
 ```bash
 npm install git://github.com/groupsky/node-dmx.git
 ```
+
+Testing Preview Releases
+------
+Preview releases are automatically published to [pkg.pr.new](https://pkg.pr.new) for every commit to main and every pull request:
+
+**Install from main branch:**
+```bash
+npm install https://pkg.pr.new/groupsky/node-dmx@main
+```
+
+**Install from a specific PR:**
+```bash
+npm install https://pkg.pr.new/groupsky/node-dmx/pr/<PR-NUMBER>
+```
+
+**Install from a specific commit:**
+```bash
+npm install https://pkg.pr.new/groupsky/node-dmx@<COMMIT-SHA>
+```
+
+Preview releases allow you to test changes before they're officially published to npm.
 Use
 ------
 This sample code searches for the first available device and starts turn the light on and off infinitely
