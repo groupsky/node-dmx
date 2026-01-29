@@ -5,6 +5,29 @@ Description
 
 Control any DMX512 compatible lighting system with node.js via FTDI USB-RS485 cable.
 
+This is a native C++ addon using libftdi for direct hardware control, providing low-latency DMX transmission with generic FTDI-based USB-RS485 converters (such as FT232RL + SP485 chipsets).
+
+Alternatives
+------
+
+If you need support for multiple DMX controller types beyond FTDI USB-RS485 cables, consider [node-dmx/dmx](https://github.com/node-dmx/dmx), a JavaScript library with pluggable drivers for:
+
+- Enttec USB DMX Pro (recommended by that project)
+- DMXKing ultraDMX devices
+- Art-Net protocol
+- BeagleBone-DMX
+- Various other controllers
+
+**Choose this project (groupsky/node-dmx) if you:**
+- Use generic FTDI USB-RS485 cables (like the [cheap AliExpress adapters](https://s.click.aliexpress.com/e/_c3lqFhuX) with FT232RL + SP485 chipsets)
+- Need direct hardware control with minimal latency
+- Want a lightweight, focused solution without abstraction layers
+
+**Choose node-dmx/dmx if you:**
+- Need to support multiple different DMX controller types
+- Want built-in animation features and multi-universe management
+- Prefer pure JavaScript without native compilation
+
 Requirements
 ------
 * node.js
