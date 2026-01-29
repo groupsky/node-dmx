@@ -23,17 +23,17 @@ Preview releases are automatically published to [pkg.pr.new](https://pkg.pr.new)
 
 **Install from main branch:**
 ```bash
-npm install https://pkg.pr.new/groupsky/node-dmx@main
+npm install https://pkg.pr.new/groupsky/node-dmx/dmx@main
 ```
 
 **Install from a specific PR:**
 ```bash
-npm install https://pkg.pr.new/groupsky/node-dmx/pr/<PR-NUMBER>
+npm install https://pkg.pr.new/groupsky/node-dmx/dmx@<PR-NUMBER>
 ```
 
 **Install from a specific commit:**
 ```bash
-npm install https://pkg.pr.new/groupsky/node-dmx@<COMMIT-SHA>
+npm install https://pkg.pr.new/groupsky/node-dmx/dmx@<COMMIT-SHA>
 ```
 
 Preview releases allow you to test changes before they're officially published to npm.
