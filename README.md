@@ -1,3 +1,7 @@
+[![GitHub release](https://img.shields.io/github/v/release/groupsky/node-dmx)](https://github.com/groupsky/node-dmx/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/groupsky/node-dmx/ci.yml?branch=main)](https://github.com/groupsky/node-dmx/actions/workflows/ci.yml)
+[![Node version](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen)](https://nodejs.org/)
+![Native addon](https://img.shields.io/badge/native-addon-blue)
 [![pkg.pr.new](https://pkg.pr.new/badge/groupsky/node-dmx)](https://pkg.pr.new/~/groupsky/node-dmx)
 
 Description
