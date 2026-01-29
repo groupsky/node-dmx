@@ -37,6 +37,7 @@ npm install https://pkg.pr.new/groupsky/node-dmx@<COMMIT-SHA>
 ```
 
 Preview releases allow you to test changes before they're officially published to npm.
+
 Use
 ------
 This sample code searches for the first available device and starts turn the light on and off infinitely
