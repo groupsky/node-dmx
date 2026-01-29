@@ -45,9 +45,7 @@ SEE docs/agents/git.md for commit message format.
 
 ## Configuration
 
-Configuration is defined inline in the workflow file (`.github/workflows/release.yml`).
-
-**.release-please-manifest.json**: Tracks current version (updated automatically by release-please)
+Configuration is defined inline in the workflow file (`.github/workflows/release.yml`) using the `release-type: node` parameter. No additional configuration files are needed.
 
 ## Requirements
 
@@ -58,7 +56,6 @@ Configuration is defined inline in the workflow file (`.github/workflows/release
 
 - `.github/workflows/release.yml` - Automatic release workflow (includes inline configuration)
 - `.github/workflows/pkg-pr-new.yml` - Preview packages workflow
-- `.release-please-manifest.json` - Version tracking manifest
 - `docs/agents/git.md` - Commit message format and conventional commits
 - https://github.com/googleapis/release-please - Official release-please documentation
 - https://github.com/googleapis/release-please-action - GitHub Action documentation
