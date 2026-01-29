@@ -8,9 +8,7 @@ Publishing to npm using release-please with conventional commits. Uses npm trust
 
 ## Release Triggers
 
-**Manual Releases**: Triggered manually via GitHub Actions workflow_dispatch. Two-step process:
-1. Create GitHub release and update changelog
-2. Optionally publish to npm registry
+**Automatic on push to main**: release-please runs on every push to main and creates/updates a "Release PR" with changelog and version bumps. Merge the Release PR when ready to create the GitHub release.
 
 **Preview Packages (Pull Requests)**: Automatic via pkg.pr.new on pull requests. Creates temporary preview packages for testing without publishing to npm registry.
 
@@ -25,21 +23,23 @@ SEE docs/agents/git.md for commit message format.
 
 ## How Release-Please Works
 
-1. Analyzes commits since last release using conventional commits
-2. Determines next version based on commit types
-3. Generates/updates CHANGELOG.md from commit messages
-4. Updates package.json version
-5. Creates GitHub release with release notes
-6. Optionally triggers npm publish job
+1. On every push to main, analyzes commits since last release using conventional commits
+2. Creates/updates a "Release PR" with:
+   - Updated CHANGELOG.md from commit messages
+   - Updated package.json version
+   - Determined next version based on commit types
+3. When you merge the Release PR, creates GitHub release with release notes
+4. Manual npm publish as needed (not automated)
 
 ## Triggering Releases
 
-**Manual Release**:
-1. Go to Actions → Release workflow
-2. Click "Run workflow"
-3. Select options:
-   - "Create GitHub release" - generates changelog, tags version, creates GitHub release
-   - "Publish to npm" - builds and publishes to npm (requires npm environment approval)
+**Production Release**:
+1. Push commits to main (or merge PRs)
+2. release-please automatically creates/updates a "Release PR"
+3. Review the Release PR changelog and version bump
+4. Merge the Release PR when ready to publish
+5. GitHub release is automatically created
+6. Manually publish to npm if needed
 
 **Preview Packages**: Automatic on pull requests via pkg.pr.new. Preview URLs posted as PR comments.
 
@@ -51,8 +51,7 @@ SEE docs/agents/git.md for commit message format.
 ## Requirements
 
 - Conventional commit messages
-- npm environment configured with OIDC trusted publishing
-- Appropriate permissions in workflow (contents: write, pull-requests: write, id-token: write)
+- Appropriate permissions in workflow (contents: write, pull-requests: write)
 
 ## References
 
