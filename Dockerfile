@@ -22,6 +22,9 @@ COPY package*.json ./
 COPY binding.gyp ./
 COPY dmx.cc dmx.h ./
 
+# Update npm to latest version for security fixes in build dependencies (node-gyp)
+RUN npm install -g npm@latest
+
 # Install dependencies and build native addon
 # --omit=dev skips devDependencies, --ignore-scripts prevents postinstall vulnerabilities
 RUN npm ci --omit=dev --ignore-scripts && \
