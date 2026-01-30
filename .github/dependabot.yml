@@ -4,7 +4,24 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    commit-message:
+      prefix: "deps(npm)"
+      prefix-development: "chore(npm)"
+    open-pull-requests-limit: 10
+    groups:
+      # Group major updates separately for easier review
+      major-dependencies:
+        update-types:
+          - "major"
+      # Group minor/patch updates together
+      minor-patch-dependencies:
+        update-types:
+          - "minor"
+          - "patch"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
+    commit-message:
+      prefix: "chore(actions)"
