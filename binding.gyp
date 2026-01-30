@@ -6,13 +6,7 @@
       'include_dirs': [
         '<!(node -e "require(\'nan\')")'
       ],
-      'cflags': [
-        '<!@(pkg-config --cflags libftdi1 || pkg-config --cflags libftdi || echo "")'
-      ],
-      'ldflags': [
-        '<!@(pkg-config --libs libftdi1 || pkg-config --libs libftdi || echo "-lftdi")'
-      ],
-      "libraries": [ "-lpthread" ]
+      "libraries": [ "-lftdi" ]
     },
     {
       "target_name": "action_after_build",

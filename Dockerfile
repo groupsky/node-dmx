@@ -10,7 +10,10 @@ RUN apk add --no-cache --virtual .build-deps \
     gcc \
     libftdi1-dev \
     libusb-dev \
-    pkgconf
+    pkgconf && \
+    # Create symlinks for Debian compatibility (Alpine uses libftdi1, Debian uses libftdi)
+    ln -s /usr/lib/libftdi1.so /usr/lib/libftdi.so && \
+    ln -s /usr/include/libftdi1/ftdi.h /usr/include/ftdi.h
 
 WORKDIR /app
 
