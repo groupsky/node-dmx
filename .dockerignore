@@ -53,3 +53,7 @@ tmp/
 temp/
 *.tmp
 *.log
+
+# Build configuration
+wscript
+.nvmrc

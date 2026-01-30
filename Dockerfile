@@ -1,14 +1,16 @@
 # Multi-stage build for minimal production image
-FROM node:24-slim AS builder
+FROM node:24.13.0-alpine3.23 AS builder
 
 # Install build dependencies and libftdi development files
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# --virtual creates a virtual package for easy cleanup
+RUN apk add --no-cache --virtual .build-deps \
     python3 \
     make \
     g++ \
+    gcc \
     libftdi1-dev \
-    pkg-config \
-    && rm -rf /var/lib/apt/lists/*
+    libusb-dev \
+    pkgconf
 
 WORKDIR /app
 
@@ -18,21 +20,24 @@ COPY binding.gyp ./
 COPY dmx.cc dmx.h ./
 
 # Install dependencies and build native addon
-RUN npm ci --ignore-scripts && \
-    npm rebuild --build-from-source && \
-    npm prune --production
+# --omit=dev skips devDependencies, --ignore-scripts prevents postinstall vulnerabilities
+RUN npm ci --omit=dev --ignore-scripts && \
+    npm rebuild --build-from-source
+
+# Remove build dependencies to minimize layer size
+RUN apk del .build-deps
 
 # Verify binary was built
 RUN test -f dmx_native.node || (echo "Build failed: dmx_native.node not found" && exit 1)
 
 # ============================================================================
 # Runtime stage - minimal production image
-FROM node:24-slim
+FROM node:24.13.0-alpine3.23
 
-# Install only runtime dependencies (no dev packages)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libftdi1-2 \
-    && rm -rf /var/lib/apt/lists/*
+# Install only runtime dependencies (libftdi1 and libusb)
+RUN apk add --no-cache \
+    libftdi1 \
+    libusb
 
 WORKDIR /app
 
