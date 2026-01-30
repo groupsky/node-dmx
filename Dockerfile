@@ -22,13 +22,10 @@ COPY dmx.cc dmx.h ./
 # Install dependencies and build native addon
 # --omit=dev skips devDependencies, --ignore-scripts prevents postinstall vulnerabilities
 RUN npm ci --omit=dev --ignore-scripts && \
-    npm rebuild --build-from-source
+    npm rebuild --build-from-source && \
+    test -f dmx_native.node || (echo "Build failed: dmx_native.node not found" && exit 1)
 
-# Remove build dependencies to minimize layer size
-RUN apk del .build-deps
-
-# Verify binary was built
-RUN test -f dmx_native.node || (echo "Build failed: dmx_native.node not found" && exit 1)
+# Note: Build dependencies remain in builder stage but are not copied to runtime stage
 
 # ============================================================================
 # Runtime stage - minimal production image
