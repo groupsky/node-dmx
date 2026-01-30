@@ -2,7 +2,13 @@
   "bootstrap-sha": "6ccbdba9fc7f0d58d8033d65dd79060d9ab5cb23",
   "packages": {
     ".": {
-      "release-type": "node"
+      "release-type": "node",
+      "changelog-sections": [
+        {"type": "feat", "section": "Features"},
+        {"type": "fix", "section": "Bug Fixes"},
+        {"type": "deps", "section": "Dependencies"},
+        {"type": "chore", "section": "Miscellaneous", "hidden": false}
+      ]
     }
   }
 }
