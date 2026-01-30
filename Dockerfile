@@ -44,8 +44,8 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-# Copy built application and dependencies
-COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+# Copy only the compiled native addon and package metadata
+# node_modules not needed - this is a pure native addon (no JS dependencies at runtime)
 COPY --from=builder --chown=node:node /app/dmx_native.node ./dmx_native.node
 COPY --chown=node:node package.json ./
 
