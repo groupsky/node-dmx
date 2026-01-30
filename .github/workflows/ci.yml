@@ -65,6 +65,7 @@ jobs:
         with:
           context: .
           load: true
+          target: runtime
           tags: node-dmx:scan-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

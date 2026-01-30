@@ -35,7 +35,7 @@ RUN npm ci --omit=dev --ignore-scripts && \
 
 # ============================================================================
 # Runtime stage - minimal production image
-FROM node:24.13.0-alpine3.23
+FROM node:24.13.0-alpine3.23 AS runtime
 
 # Install only runtime dependencies (libftdi1 and libusb)
 RUN apk add --no-cache \
