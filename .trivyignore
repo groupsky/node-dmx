@@ -1,0 +1,20 @@
+# Trivy Ignore File
+#
+# This file allows you to suppress specific vulnerabilities from Trivy scans.
+# Use this for false positives or accepted risks that have been reviewed.
+#
+# Format: CVE-ID or vulnerability ID, one per line
+# Lines starting with # are comments
+#
+# Example:
+# CVE-2024-12345  # False positive: vulnerability in build-only dependency
+# CVE-2024-67890  # Accepted risk: requires physical hardware access (documented in SECURITY.md)
+#
+# Best Practices:
+# 1. Include a comment explaining WHY each CVE is ignored
+# 2. Link to related issue/PR if applicable
+# 3. Set a review date for accepted risks
+# 4. Never ignore CRITICAL vulnerabilities without security team approval
+#
+# Current exceptions:
+# (none - Alpine base and minimal dependencies have low false positive rate)

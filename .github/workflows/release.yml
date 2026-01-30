@@ -39,28 +39,23 @@ jobs:
           echo "- **Version:** ${{ steps.release.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Release URL:** ${{ steps.release.outputs.html_url }}" >> $GITHUB_STEP_SUMMARY
 
-  docker-publish:
-    name: Publish Docker Image
+  docker-build:
+    name: Build Docker Image
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
     permissions:
       contents: read
-      packages: write
+    outputs:
+      image-version: ${{ steps.meta.outputs.version }}
+      image-tags: ${{ steps.meta.outputs.tags }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7185 # v3.3.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
@@ -69,21 +64,72 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=semver,pattern={{version}},value=${{ needs.release-please.outputs.tag_name }}
-            type=raw,value=latest
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.release-please.outputs.tag_name }}
+            type=semver,pattern={{major}},value=${{ needs.release-please.outputs.tag_name }},enable=${{ !startsWith(needs.release-please.outputs.tag_name, 'v0.') }}
+            type=raw,value=latest,enable=${{ !contains(needs.release-please.outputs.tag_name, '-') }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@c47758b664febf0eb4e70925eb716c77cd434c27 # v3.7.1
 
-      - name: Build and push Docker image
+      - name: Build Docker image
         uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
         with:
           context: .
-          push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=oci,dest=/tmp/image.tar
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: docker-image
+          path: /tmp/image.tar
+          retention-days: 1
+
+  docker-publish:
+    name: Publish Docker Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: docker-build
+    permissions:
+      packages: write
+
+    steps:
+      - name: Download image artifact
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: docker-image
+          path: /tmp
+
+      - name: Install skopeo
+        uses: crazy-max/ghaction-setup-skopeo@2fc071a04fdcf2ac9b7f7a12c4c3883985f0fae5 # v1.0.0
+
+      - name: Log in to GitHub Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | skopeo login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push image to registry
+        run: |
+          set -euo pipefail
+          # Push the OCI archive to each tag
+          failed_tags=""
+          while IFS= read -r tag; do
+            if [ -n "${tag}" ]; then
+              echo "Pushing to ${tag}"
+              if ! skopeo copy --multi-arch all oci-archive:/tmp/image.tar "docker://${tag}"; then
+                failed_tags="${failed_tags} ${tag}"
+                echo "::error::Failed to push ${tag}"
+              fi
+            fi
+          done <<< "${{ needs.docker-build.outputs.image-tags }}"
+
+          if [ -n "${failed_tags}" ]; then
+            echo "::error::Failed to push tags:${failed_tags}"
+            exit 1
+          fi
 
       - name: Docker image summary
         run: |
@@ -91,5 +137,54 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.docker-build.outputs.image-tags }}" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
+
+  trivy-scan:
+    name: Scan Docker Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [docker-build, docker-publish]
+    permissions:
+      contents: read
+
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # 0.24.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:${{ needs.docker-build.outputs.image-version }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results as artifact
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: trivy-results
+          path: trivy-results.sarif
+          retention-days: 30
+
+      - name: Run Trivy vulnerability scanner (table output)
+        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # 0.24.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:${{ needs.docker-build.outputs.image-version }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+  security-upload:
+    name: Upload Security Scan Results
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: trivy-scan
+    permissions:
+      security-events: write
+
+    steps:
+      - name: Download Trivy results
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: trivy-results
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@4355270be187e1b672a7a1c7c7bae5afdc1ab94a # v3.24.10
+        with:
+          sarif_file: 'trivy-results.sarif'
