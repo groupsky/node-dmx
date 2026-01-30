@@ -45,3 +45,24 @@ jobs:
         run: |
           test -f dmx_native.node
           echo "Build successful on Node.js ${{ matrix.node-version }}"
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install dependencies
+        run: npm install --package-lock-only
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
