@@ -4,10 +4,15 @@
       "target_name": "dmx_native",
       "sources": [ "dmx.cc" ],
       'include_dirs': [
-        '<!(node -e "require(\'nan\')")',
-        '/usr/include/libftdi1'
+        '<!(node -e "require(\'nan\')")'
       ],
-      "libraries": [ "-lftdi1", "-lpthread" ]
+      'cflags': [
+        '<!@(pkg-config --cflags libftdi1 || pkg-config --cflags libftdi || echo "")'
+      ],
+      'ldflags': [
+        '<!@(pkg-config --libs libftdi1 || pkg-config --libs libftdi || echo "-lftdi")'
+      ],
+      "libraries": [ "-lpthread" ]
     },
     {
       "target_name": "action_after_build",
